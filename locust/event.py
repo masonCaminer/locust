@@ -1,7 +1,8 @@
 import logging
-from . import log
 import traceback
-from .exception import StopUser, RescheduleTask, RescheduleTaskImmediately, InterruptTaskSet
+
+from locust import log
+from locust.exception import StopUser, RescheduleTask, RescheduleTaskImmediately, InterruptTaskSet
 
 
 class EventHook(object):

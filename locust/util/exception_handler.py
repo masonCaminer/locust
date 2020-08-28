@@ -4,7 +4,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def retry(delays=(1, 3, 5), exception=Exception):
+def retry(delays=(1, 3, 5),
+          exception=Exception):
     def decorator(function):
         def wrapper(*args, **kwargs):
             cnt = 0

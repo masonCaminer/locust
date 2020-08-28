@@ -4,7 +4,8 @@ import time
 import requests
 from requests import Request, Response
 from requests.auth import HTTPBasicAuth
-from requests.exceptions import InvalidSchema, InvalidURL, MissingSchema, RequestException
+from requests.exceptions import (InvalidSchema, InvalidURL, MissingSchema,
+                                 RequestException)
 
 from urllib.parse import urlparse, urlunparse
 
@@ -14,8 +15,9 @@ absolute_http_url_regexp = re.compile(r"^https?://", re.I)
 
 
 class LocustResponse(Response):
+
     def raise_for_status(self):
-        if hasattr(self, "error") and self.error:
+        if hasattr(self, 'error') and self.error:
             raise self.error
         Response.raise_for_status(self)
 
@@ -59,9 +61,7 @@ class HttpSession(requests.Session):
                 netloc += ":%d" % parsed_url.port
 
             # remove username and password from the base_url
-            self.base_url = urlunparse(
-                (parsed_url.scheme, netloc, parsed_url.path, parsed_url.params, parsed_url.query, parsed_url.fragment)
-            )
+            self.base_url = urlunparse((parsed_url.scheme, netloc, parsed_url.path, parsed_url.params, parsed_url.query, parsed_url.fragment))
             # configure requests to use basic auth
             self.auth = HTTPBasicAuth(parsed_url.username, parsed_url.password)
 
@@ -118,7 +118,6 @@ class HttpSession(requests.Session):
         request_meta["response_time"] = (time.monotonic() - request_meta["start_time"]) * 1000
 
         request_meta["name"] = name or (response.history and response.history[0] or response).request.path_url
-
         # get the length of the content, but if the argument stream is set to True, we take
         # the size from the content-length header, in order to not trigger fetching of the body
         if kwargs.get("stream", False):
@@ -128,9 +127,7 @@ class HttpSession(requests.Session):
 
         if catch_response:
             response.locust_request_meta = request_meta
-            return ResponseContextManager(
-                response, request_success=self.request_success, request_failure=self.request_failure
-            )
+            return ResponseContextManager(response, request_success=self.request_success, request_failure=self.request_failure)
         else:
             if name:
                 # Since we use the Exception message when grouping failures, in order to not get

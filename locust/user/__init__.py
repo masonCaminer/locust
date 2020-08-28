@@ -1,2 +1,2 @@
-from .task import task, tag, TaskSet
-from .users import HttpUser, User
+from locust.user.task import task, tag, TaskSet
+from locust.user.users import HttpUser, User

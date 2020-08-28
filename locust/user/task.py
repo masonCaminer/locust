@@ -7,8 +7,8 @@ from time import time
 import gevent
 from gevent import GreenletExit
 
-from locust.exception import InterruptTaskSet, RescheduleTask, RescheduleTaskImmediately, StopUser, MissingWaitTimeError
-
+from locust.exception import InterruptTaskSet, RescheduleTask, RescheduleTaskImmediately, \
+    StopUser, MissingWaitTimeError
 
 logger = logging.getLogger(__name__)
 
@@ -74,16 +74,16 @@ def tag(*tags):
     """
 
     def decorator_func(decorated):
-        if hasattr(decorated, "tasks"):
+        if hasattr(decorated, 'tasks'):
             decorated.tasks = list(map(tag(*tags), decorated.tasks))
         else:
-            if "locust_tag_set" not in decorated.__dict__:
+            if 'locust_tag_set' not in decorated.__dict__:
                 decorated.locust_tag_set = set()
             decorated.locust_tag_set |= set(tags)
         return decorated
 
     if len(tags) == 0 or callable(tags[0]):
-        raise ValueError("No tag name was supplied")
+        raise ValueError('No tag name was supplied')
 
     return decorator_func
 
@@ -135,14 +135,14 @@ def filter_tasks_by_tags(task_holder, tags=None, exclude_tags=None, checked=None
             continue
 
         passing = True
-        if hasattr(task, "tasks"):
+        if hasattr(task, 'tasks'):
             filter_tasks_by_tags(task, tags, exclude_tags, checked)
             passing = len(task.tasks) > 0
         else:
             if tags is not None:
-                passing &= "locust_tag_set" in dir(task) and len(task.locust_tag_set & tags) > 0
+                passing &= 'locust_tag_set' in dir(task) and len(task.locust_tag_set & tags) > 0
             if exclude_tags is not None:
-                passing &= "locust_tag_set" not in dir(task) or len(task.locust_tag_set & exclude_tags) == 0
+                passing &= 'locust_tag_set' not in dir(task) or len(task.locust_tag_set & exclude_tags) == 0
 
         if passing:
             new_tasks.append(task)
@@ -274,7 +274,7 @@ class TaskSet(object, metaclass=TaskSetMeta):
             else:
                 raise RescheduleTask(e.reschedule).with_traceback(sys.exc_info()[2])
 
-        while True:
+        while (True):
             try:
                 if not self._task_queue:
                     self.schedule_task(self.get_next_task())
@@ -354,13 +354,10 @@ class TaskSet(object, metaclass=TaskSetMeta):
         elif self.min_wait is not None and self.max_wait is not None:
             return random.randint(self.min_wait, self.max_wait) / 1000.0
         else:
-            raise MissingWaitTimeError(
-                "You must define a wait_time method on either the %s or %s class"
-                % (
-                    type(self.user).__name__,
-                    type(self).__name__,
-                )
-            )
+            raise MissingWaitTimeError("You must define a wait_time method on either the %s or %s class" % (
+                type(self.user).__name__,
+                type(self).__name__,
+            ))
 
     def wait(self):
         """

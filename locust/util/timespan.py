@@ -10,11 +10,11 @@ def parse_timespan(time_str):
     if not time_str:
         raise ValueError("Invalid time span format")
 
-    if re.match(r"^\d+$", time_str):
+    if re.match(r'^\d+$', time_str):
         # if an int is specified we assume they want seconds
         return int(time_str)
 
-    timespan_regex = re.compile(r"((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?")
+    timespan_regex = re.compile(r'((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?')
     parts = timespan_regex.match(time_str)
     if not parts:
         raise ValueError("Invalid time span format. Valid formats: 20, 20s, 3m, 2h, 1h20m, 3h30m10s, etc.")

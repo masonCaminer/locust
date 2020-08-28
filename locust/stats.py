@@ -8,10 +8,9 @@ import csv
 
 import gevent
 
-from .exception import StopUser
+from locust.exception import StopUser
 
 import logging
-
 console_logger = logging.getLogger("locust.stats_logger")
 
 STATS_NAME_WIDTH = 60
@@ -37,7 +36,19 @@ CURRENT_RESPONSE_TIME_PERCENTILE_WINDOW = 10
 
 CachedResponseTimes = namedtuple("CachedResponseTimes", ["response_times", "num_requests"])
 
-PERCENTILES_TO_REPORT = [0.50, 0.66, 0.75, 0.80, 0.90, 0.95, 0.98, 0.99, 0.999, 0.9999, 1.0]
+PERCENTILES_TO_REPORT = [
+    0.50,
+    0.66,
+    0.75,
+    0.80,
+    0.90,
+    0.95,
+    0.98,
+    0.99,
+    0.999,
+    0.9999,
+    1.0
+]
 
 
 class RequestStatsAdditionError(Exception):
@@ -50,10 +61,8 @@ def get_readable_percentiles(percentile_list):
     :param percentile_list: The list of percentiles in range 0-1
     :return: The list of string representation for each percentile in 0%-100% view
     """
-    return [
-        f"{int(percentile * 100) if (percentile * 100).is_integer() else round(100 * percentile, 6)}%"
-        for percentile in percentile_list
-    ]
+    return [f"{int(percentile * 100) if (percentile * 100).is_integer() else round(100 * percentile, 6)}%"
+            for percentile in percentile_list]
 
 
 def calculate_response_time_percentile(response_times, num_requests, percent):
@@ -71,7 +80,7 @@ def calculate_response_time_percentile(response_times, num_requests, percent):
     processed_count = 0
     for response_time in sorted(response_times.keys(), reverse=True):
         processed_count += response_times[response_time]
-        if num_requests - processed_count <= num_of_request:
+        if(num_requests - processed_count <= num_of_request):
             return response_time
     # if all response times were None
     return 0
@@ -97,7 +106,6 @@ class RequestStats(object):
     """
     Class that holds the request statistics.
     """
-
     def __init__(self, use_response_times_cache=True):
         """
         :param use_response_times_cache: The value of use_response_times_cache will be set for each StatsEntry()
@@ -177,11 +185,7 @@ class RequestStats(object):
         self.history = []
 
     def serialize_stats(self):
-        return [
-            self.entries[key].get_stripped_report()
-            for key in self.entries.keys()
-            if not (self.entries[key].num_requests == 0 and self.entries[key].num_failures == 0)
-        ]
+        return [self.entries[key].get_stripped_report() for key in self.entries.keys() if not (self.entries[key].num_requests == 0 and self.entries[key].num_failures == 0)]
 
     def serialize_errors(self):
         return dict([(k, e.to_dict()) for k, e in self.errors.items()])
@@ -287,7 +291,7 @@ class StatsEntry(object):
 
         if self.use_response_times_cache and self.last_request_timestamp and t > int(self.last_request_timestamp):
             # see if we shall make a copy of the response_times dict and store in the cache
-            self._cache_response_times(t - 1)
+            self._cache_response_times(t-1)
 
         self.num_requests += 1
         self._log_time_of_request(current_time)
@@ -375,9 +379,7 @@ class StatsEntry(object):
             return 0
         slice_start_time = max(int(self.stats.last_request_timestamp) - 12, int(self.stats.start_time or 0))
 
-        reqs = [
-            self.num_reqs_per_sec.get(t, 0) for t in range(slice_start_time, int(self.stats.last_request_timestamp) - 2)
-        ]
+        reqs = [self.num_reqs_per_sec.get(t, 0) for t in range(slice_start_time, int(self.stats.last_request_timestamp)-2)]
         return avg(reqs)
 
     @property
@@ -386,9 +388,7 @@ class StatsEntry(object):
             return 0
         slice_start_time = max(int(self.stats.last_request_timestamp) - 12, int(self.stats.start_time or 0))
 
-        reqs = [
-            self.num_fail_per_sec.get(t, 0) for t in range(slice_start_time, int(self.stats.last_request_timestamp) - 2)
-        ]
+        reqs = [self.num_fail_per_sec.get(t, 0) for t in range(slice_start_time, int(self.stats.last_request_timestamp)-2)]
         return avg(reqs)
 
     @property
@@ -550,9 +550,7 @@ class StatsEntry(object):
         when calculating this.
         """
         if not self.use_response_times_cache:
-            raise ValueError(
-                "StatsEntry.use_response_times_cache must be set to True if we should be able to calculate the _current_ response time percentile"
-            )
+            raise ValueError("StatsEntry.use_response_times_cache must be set to True if we should be able to calculate the _current_ response time percentile")
         # First, we want to determine which of the cached response_times dicts we should
         # use to get response_times for approximately 10 seconds ago.
         t = int(time.time())
@@ -562,10 +560,10 @@ class StatsEntry(object):
         # that it's ordered by preference by starting to add t-10, then t-11, t-9, t-12, t-8,
         # and so on
         acceptable_timestamps = []
-        acceptable_timestamps.append(t - CURRENT_RESPONSE_TIME_PERCENTILE_WINDOW)
+        acceptable_timestamps.append(t-CURRENT_RESPONSE_TIME_PERCENTILE_WINDOW)
         for i in range(1, 9):
-            acceptable_timestamps.append(t - CURRENT_RESPONSE_TIME_PERCENTILE_WINDOW - i)
-            acceptable_timestamps.append(t - CURRENT_RESPONSE_TIME_PERCENTILE_WINDOW + i)
+            acceptable_timestamps.append(t-CURRENT_RESPONSE_TIME_PERCENTILE_WINDOW-i)
+            acceptable_timestamps.append(t-CURRENT_RESPONSE_TIME_PERCENTILE_WINDOW+i)
 
         cached = None
         for ts in acceptable_timestamps:
@@ -590,17 +588,16 @@ class StatsEntry(object):
 
         tpl = f" %-{str(STATS_TYPE_WIDTH)}s %-{str(STATS_NAME_WIDTH)}s %8d {' '.join(['%6d'] * len(PERCENTILES_TO_REPORT))}"
 
-        return tpl % (
-            (self.method, self.name)
-            + tuple([self.get_response_time_percentile(p) for p in PERCENTILES_TO_REPORT])
-            + (self.num_requests,)
-        )
+        return tpl % ((self.method, self.name)
+                      + tuple([self.get_response_time_percentile(p) for p in PERCENTILES_TO_REPORT])
+                      + (self.num_requests,))
 
     def _cache_response_times(self, t):
         self.response_times_cache[t] = CachedResponseTimes(
             response_times=copy(self.response_times),
             num_requests=self.num_requests,
         )
+
 
         # We'll use a cache size of CURRENT_RESPONSE_TIME_PERCENTILE_WINDOW + 10 since - in the extreme case -
         # we might still use response times (from the cache) for t-CURRENT_RESPONSE_TIME_PERCENTILE_WINDOW-10
@@ -638,30 +635,35 @@ class StatsError(object):
     @classmethod
     def create_key(cls, method, name, error):
         key = "%s.%s.%r" % (method, name, StatsError.parse_error(error))
-        return hashlib.md5(key.encode("utf-8")).hexdigest()
+        return hashlib.md5(key.encode('utf-8')).hexdigest()
 
     def occurred(self):
         self.occurrences += 1
 
     def to_name(self):
-        return "%s %s: %r" % (self.method, self.name, repr(self.error))
+        return "%s %s: %r" % (self.method,
+            self.name, repr(self.error))
 
     def to_dict(self):
         return {
             "method": self.method,
             "name": self.name,
             "error": StatsError.parse_error(self.error),
-            "occurrences": self.occurrences,
+            "occurrences": self.occurrences
         }
 
     @classmethod
     def from_dict(cls, data):
-        return cls(data["method"], data["name"], data["error"], data["occurrences"])
+        return cls(
+            data["method"],
+            data["name"],
+            data["error"],
+            data["occurrences"]
+        )
 
 
 def avg(values):
     return sum(values, 0.0) / max(len(values), 1)
-
 
 def median_from_dict(total, count):
     """
@@ -679,7 +681,7 @@ def setup_distributed_stats_event_listeners(events, stats):
     def on_report_to_master(client_id, data):
         data["stats"] = stats.serialize_stats()
         data["stats_total"] = stats.total.get_stripped_report()
-        data["errors"] = stats.serialize_errors()
+        data["errors"] =  stats.serialize_errors()
         stats.errors = {}
 
     def on_worker_report(client_id, data):
@@ -703,10 +705,7 @@ def setup_distributed_stats_event_listeners(events, stats):
 
 
 def print_stats(stats, current=True):
-    console_logger.info(
-        (" %-" + str(STATS_NAME_WIDTH) + "s %7s %12s  | %7s %7s %7s %7s  | %7s %7s")
-        % ("Name", "# reqs", "# fails", "Avg", "Min", "Max", "Median", "req/s", "failures/s")
-    )
+    console_logger.info((" %-" + str(STATS_NAME_WIDTH) + "s %7s %12s  | %7s %7s %7s %7s  | %7s %7s") % ('Name', '# reqs', '# fails', 'Avg', 'Min', 'Max', 'Median', 'req/s', 'failures/s'))
     console_logger.info("-" * (80 + STATS_NAME_WIDTH))
     for key in sorted(stats.entries.keys()):
         r = stats.entries[key]
@@ -718,17 +717,10 @@ def print_stats(stats, current=True):
 
 def print_percentile_stats(stats):
     console_logger.info("Response time percentiles (approximated)")
-    headers = ("Type", "Name") + tuple(get_readable_percentiles(PERCENTILES_TO_REPORT)) + ("# reqs",)
-    console_logger.info(
-        (
-            f" %-{str(STATS_TYPE_WIDTH)}s %-{str(STATS_NAME_WIDTH)}s %8s "
-            f"{' '.join(['%6s'] * len(PERCENTILES_TO_REPORT))}"
-        )
-        % headers
-    )
-    separator = (
-        f'{"-" * STATS_TYPE_WIDTH}|{"-" * STATS_NAME_WIDTH}|{"-" * 9}|{("-" * 6 + "|") * len(PERCENTILES_TO_REPORT)}'
-    )
+    headers = ('Type', 'Name') + tuple(get_readable_percentiles(PERCENTILES_TO_REPORT)) + ('# reqs',)
+    console_logger.info((f" %-{str(STATS_TYPE_WIDTH)}s %-{str(STATS_NAME_WIDTH)}s %8s "
+                    f"{' '.join(['%6s'] * len(PERCENTILES_TO_REPORT))}") % headers)
+    separator = f'{"-" * STATS_TYPE_WIDTH}|{"-" * STATS_NAME_WIDTH}|{"-" * 9}|{("-" * 6 + "|") * len(PERCENTILES_TO_REPORT)}'
     console_logger.info(separator)
     for key in sorted(stats.entries.keys()):
         r = stats.entries[key]
@@ -758,13 +750,10 @@ def stats_printer(stats):
         while True:
             print_stats(stats)
             gevent.sleep(CONSOLE_STATS_INTERVAL_SEC)
-
     return stats_printer_func
-
 
 def sort_stats(stats):
     return [stats[key] for key in sorted(stats.keys())]
-
 
 def stats_history(runner):
     """Save current stats info to history for charts of report."""
@@ -773,18 +762,17 @@ def stats_history(runner):
         if not stats.total.use_response_times_cache:
             break
         r = {
-            "time": datetime.datetime.now().strftime("%H:%M:%S"),
-            "current_rps": stats.total.current_rps or 0,
-            "current_fail_per_sec": stats.total.current_fail_per_sec or 0,
-            "response_time_percentile_95": stats.total.get_current_response_time_percentile(0.95) or 0,
-            "response_time_percentile_50": stats.total.get_current_response_time_percentile(0.5) or 0,
-            "user_count": runner.user_count or 0,
+            'time': datetime.datetime.now().strftime("%H:%M:%S"),
+            'current_rps': stats.total.current_rps or 0,
+            'current_fail_per_sec': stats.total.current_fail_per_sec or 0,
+            'response_time_percentile_95': stats.total.get_current_response_time_percentile(0.95) or 0,
+            'response_time_percentile_50': stats.total.get_current_response_time_percentile(0.5) or 0,
+            'user_count': runner.user_count or 0,
         }
         stats.history.append(r)
         gevent.sleep(HISTORY_STATS_INTERVAL_SEC)
 
-
-class StatsCSV:
+class StatsCSV():
     """Write statistics to csv_writer stream."""
 
     def __init__(self, environment, percentiles_to_report):
@@ -808,6 +796,7 @@ class StatsCSV:
             "Failures/s",
         ] + get_readable_percentiles(self.percentiles_to_report)
 
+
         self.failures_columns = [
             "Method",
             "Name",
@@ -816,11 +805,7 @@ class StatsCSV:
         ]
 
     def _percentile_fields(self, stats_entry):
-        return (
-            [int(stats_entry.get_response_time_percentile(x) or 0) for x in self.percentiles_to_report]
-            if stats_entry.num_requests
-            else self.percentiles_na
-        )
+        return [int(stats_entry.get_response_time_percentile(x) or 0) for x in self.percentiles_to_report] if stats_entry.num_requests else self.percentiles_na
 
     def requests_csv(self, csv_writer):
         """Write requests csv with header and data rows."""
@@ -832,22 +817,19 @@ class StatsCSV:
         stats = self.environment.stats
         for stats_entry in chain(sort_stats(stats.entries), [stats.total]):
             csv_writer.writerow(
-                chain(
-                    [
-                        stats_entry.method,
-                        stats_entry.name,
-                        stats_entry.num_requests,
-                        stats_entry.num_failures,
-                        stats_entry.median_response_time,
-                        stats_entry.avg_response_time,
-                        stats_entry.min_response_time or 0,
-                        stats_entry.max_response_time,
-                        stats_entry.avg_content_length,
-                        stats_entry.total_rps,
-                        stats_entry.total_fail_per_sec,
-                    ],
-                    self._percentile_fields(stats_entry),
-                )
+                chain([
+                    stats_entry.method,
+                    stats_entry.name,
+                    stats_entry.num_requests,
+                    stats_entry.num_failures,
+                    stats_entry.median_response_time,
+                    stats_entry.avg_response_time,
+                    stats_entry.min_response_time or 0,
+                    stats_entry.max_response_time,
+                    stats_entry.avg_content_length,
+                    stats_entry.total_rps,
+                    stats_entry.total_fail_per_sec,
+                ], self._percentile_fields(stats_entry))
             )
 
     def failures_csv(self, csv_writer):
@@ -856,14 +838,12 @@ class StatsCSV:
 
     def _failures_data_rows(self, csv_writer):
         for stats_error in sort_stats(self.environment.stats.errors):
-            csv_writer.writerow(
-                [
-                    stats_error.method,
-                    stats_error.name,
-                    stats_error.error,
-                    stats_error.occurrences,
-                ]
-            )
+            csv_writer.writerow([
+                stats_error.method,
+                stats_error.name,
+                stats_error.error,
+                stats_error.occurrences,
+            ])
 
 
 class StatsCSVFileWriter(StatsCSV):
@@ -874,13 +854,13 @@ class StatsCSVFileWriter(StatsCSV):
         self.base_filepath = base_filepath
         self.full_history = full_history
 
-        self.requests_csv_filehandle = open(self.base_filepath + "_stats.csv", "w")
+        self.requests_csv_filehandle = open(self.base_filepath + '_stats.csv', 'w')
         self.requests_csv_writer = csv.writer(self.requests_csv_filehandle)
 
-        self.stats_history_csv_filehandle = open(self.stats_history_file_name(), "w")
+        self.stats_history_csv_filehandle = open(self.stats_history_file_name(), 'w')
         self.stats_history_csv_writer = csv.writer(self.stats_history_csv_filehandle)
 
-        self.failures_csv_filehandle = open(self.base_filepath + "_failures.csv", "w")
+        self.failures_csv_filehandle = open(self.base_filepath + '_failures.csv', 'w')
         self.failures_csv_writer = csv.writer(self.failures_csv_filehandle)
         self.failures_csv_data_start = 0
 
@@ -939,6 +919,7 @@ class StatsCSVFileWriter(StatsCSV):
 
             gevent.sleep(CSV_STATS_INTERVAL_SEC)
 
+
     def _stats_history_data_rows(self, csv_writer, now):
         """
         Write CSV rows with the *current* stats. By default only includes the
@@ -956,26 +937,22 @@ class StatsCSVFileWriter(StatsCSV):
 
         for stats_entry in chain(stats_entries, [stats.total]):
             csv_writer.writerow(
-                chain(
-                    (
-                        timestamp,
-                        self.environment.runner.user_count,
-                        stats_entry.method or "",
-                        stats_entry.name,
-                        f"{stats_entry.current_rps:2f}",
-                        f"{stats_entry.current_fail_per_sec:2f}",
-                    ),
-                    self._percentile_fields(stats_entry),
-                    (
-                        stats_entry.num_requests,
-                        stats_entry.num_failures,
-                        stats_entry.median_response_time,
-                        stats_entry.avg_response_time,
-                        stats_entry.min_response_time or 0,
-                        stats_entry.max_response_time,
-                        stats_entry.avg_content_length,
-                    ),
-                )
+                chain((
+                    timestamp,
+                    self.environment.runner.user_count,
+                    stats_entry.method or "",
+                    stats_entry.name,
+                    f"{stats_entry.current_rps:2f}",
+                    f"{stats_entry.current_fail_per_sec:2f}",
+                ), self._percentile_fields(stats_entry), (
+                    stats_entry.num_requests,
+                    stats_entry.num_failures,
+                    stats_entry.median_response_time,
+                    stats_entry.avg_response_time,
+                    stats_entry.min_response_time or 0,
+                    stats_entry.max_response_time,
+                    stats_entry.avg_content_length,
+                ))
             )
 
     def requests_flush(self):
@@ -993,4 +970,4 @@ class StatsCSVFileWriter(StatsCSV):
         self.failures_csv_filehandle.close()
 
     def stats_history_file_name(self):
-        return self.base_filepath + "_stats_history.csv"
+        return self.base_filepath + '_stats_history.csv'

@@ -36,24 +36,17 @@ absolute_http_url_regexp = re.compile(r"^https?://", re.I)
 
 # List of exceptions that can be raised by geventhttpclient when sending an HTTP request,
 # and that should result in a Locust failure
-FAILURE_EXCEPTIONS = (
-    ConnectionError,
-    ConnectionRefusedError,
-    ConnectionResetError,
-    socket.error,
-    SSLError,
-    Timeout,
-    HTTPConnectionClosed,
-)
+FAILURE_EXCEPTIONS = (ConnectionError, ConnectionRefusedError, ConnectionResetError, socket.error, \
+                      SSLError, Timeout, HTTPConnectionClosed)
 
 
 def _construct_basic_auth_str(username, password):
     """Construct Authorization header value to be used in HTTP Basic Auth"""
     if isinstance(username, str):
-        username = username.encode("latin1")
+        username = username.encode('latin1')
     if isinstance(password, str):
-        password = password.encode("latin1")
-    return "Basic " + b64encode(b":".join((username, password))).strip().decode("ascii")
+        password = password.encode('latin1')
+    return 'Basic ' + b64encode(b':'.join((username, password))).strip().decode("ascii")
 
 
 class FastHttpUser(User):
@@ -99,9 +92,7 @@ class FastHttpUser(User):
     def __init__(self, environment):
         super().__init__(environment)
         if self.host is None:
-            raise LocustError(
-                "You must specify the base host. Either in the host attribute in the User class, or on the command line using the --host option."
-            )
+            raise LocustError("You must specify the base host. Either in the host attribute in the User class, or on the command line using the --host option.")
         if not re.match(r"^https?://[^/]+", self.host, re.I):
             raise LocustError("Invalid host (`%s`), must be a valid base URL. E.g. http://example.com" % self.host)
 
@@ -149,9 +140,7 @@ class FastHttpSession(object):
                 netloc += ":%d" % parsed_url.port
 
             # remove username and password from the base_url
-            self.base_url = urlunparse(
-                (parsed_url.scheme, netloc, parsed_url.path, parsed_url.params, parsed_url.query, parsed_url.fragment)
-            )
+            self.base_url = urlunparse((parsed_url.scheme, netloc, parsed_url.path, parsed_url.params, parsed_url.query, parsed_url.fragment))
             # store authentication header (we construct this by using _basic_auth_str() function from requests.auth)
             self.auth_header = _construct_basic_auth_str(parsed_url.username, parsed_url.password)
 
@@ -177,20 +166,8 @@ class FastHttpSession(object):
             r.error = e
             return r
 
-    def request(
-        self,
-        method: str,
-        path: str,
-        name: str = None,
-        data: str = None,
-        catch_response: bool = False,
-        stream: bool = False,
-        headers: dict = None,
-        auth=None,
-        json: dict = None,
-        allow_redirects=True,
-        **kwargs,
-    ):
+    def request(self, method: str, path: str, name: str = None, data: str = None, catch_response: bool = False, stream: bool = False,
+                headers: dict = None, auth=None, json: dict = None, allow_redirects=True, **kwargs):
         """
         Send and HTTP request
         Returns :py:class:`locust.contrib.fasthttp.FastResponse` object.
@@ -230,18 +207,18 @@ class FastHttpSession(object):
 
         headers = headers or {}
         if auth:
-            headers["Authorization"] = _construct_basic_auth_str(auth[0], auth[1])
+            headers['Authorization'] = _construct_basic_auth_str(auth[0], auth[1])
         elif self.auth_header:
-            headers["Authorization"] = self.auth_header
+            headers['Authorization'] = self.auth_header
         if "Accept-Encoding" not in headers and "accept-encoding" not in headers:
-            headers["Accept-Encoding"] = "gzip, deflate"
+            headers['Accept-Encoding'] = "gzip, deflate"
 
         if not data and json is not None:
             data = unshadowed_json.dumps(json)
             if "Content-Type" not in headers and "content-type" not in headers:
-                headers["Content-Type"] = "application/json"
+                headers['Content-Type'] = "application/json"
             if "Accept" not in headers and "accept" not in headers:
-                headers["Accept"] = "application/json"
+                headers['Accept'] = "application/json"
 
         if not allow_redirects:
             old_redirect_response_codes = self.client.redirect_resonse_codes
@@ -345,10 +322,10 @@ class FastResponse(CompatResponse):
             return None
         if self.encoding is None:
             if self.headers is None:
-                self.encoding = "utf-8"
+                self.encoding = 'utf-8'
             else:
-                self.encoding = self.headers.get("content-type", "").partition("charset=")[2] or "utf-8"
-        return str(self.content, self.encoding, errors="replace")
+                self.encoding = self.headers.get('content-type', '').partition("charset=")[2] or 'utf-8'
+        return str(self.content, self.encoding, errors='replace')
 
     def json(self) -> dict:
         """
@@ -358,7 +335,7 @@ class FastResponse(CompatResponse):
 
     def raise_for_status(self):
         """Raise any connection errors that occurred during the request"""
-        if hasattr(self, "error") and self.error:
+        if hasattr(self, 'error') and self.error:
             raise self.error
 
     @property
@@ -380,7 +357,6 @@ class ErrorResponse(object):
     This is used as a dummy response object when geventhttpclient raises an error
     that doesn't have a real Response object attached. E.g. a socket error or similar
     """
-
     headers = None
     content = None
     status_code = 0
@@ -401,9 +377,8 @@ class LocustUserAgent(UserAgent):
     def _urlopen(self, request):
         """Override _urlopen() in order to make it use the response_type attribute"""
         client = self.clientpool.get_client(request.url_split)
-        resp = client.request(
-            request.method, request.url_split.request_uri, body=request.payload, headers=request.headers
-        )
+        resp = client.request(request.method, request.url_split.request_uri,
+                              body=request.payload, headers=request.headers)
         return self.response_type(resp, request=request, sent_request=resp._sent_request)
 
 

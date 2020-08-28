@@ -3,13 +3,8 @@ from gevent import GreenletExit, greenlet
 from locust.clients import HttpSession
 from locust.exception import LocustError, StopUser
 from locust.util import deprecation
-from .task import (
-    DefaultTaskSet,
-    get_tasks_from_base_classes,
-    LOCUST_STATE_RUNNING,
-    LOCUST_STATE_WAITING,
-    LOCUST_STATE_STOPPING,
-)
+from locust.user.task import DefaultTaskSet, get_tasks_from_base_classes, \
+     LOCUST_STATE_RUNNING, LOCUST_STATE_WAITING, LOCUST_STATE_STOPPING
 
 
 class NoClientWarningRaiser(object):
@@ -17,7 +12,6 @@ class NoClientWarningRaiser(object):
     The purpose of this class is to emit a sensible error message for old test scripts that
     inherit from User, and expects there to be an HTTP client under the client attribute.
     """
-
     def __getattr__(self, _):
         raise LocustError("No client instantiated. Did you intend to inherit from HttpUser?")
 
@@ -27,7 +21,6 @@ class UserMeta(type):
     Meta class for the main User class. It's used to allow User classes to specify task execution
     ratio using an {task:int} dict, or a [(task0,int), ..., (taskN,int)] list.
     """
-
     def __new__(mcs, classname, bases, class_dict):
         # gather any tasks that is declared on the class (or it's bases)
         tasks = get_tasks_from_base_classes(bases, class_dict)
@@ -162,7 +155,6 @@ class User(object, metaclass=UserMeta):
         :type gevent_group: gevent.pool.Group
         :returns: The spawned greenlet.
         """
-
         def run_user(user):
             """
             Main function for User greenlet. It's important that this function takes the user
@@ -170,7 +162,6 @@ class User(object, metaclass=UserMeta):
             User instance.
             """
             user.run()
-
         self._greenlet = gevent_group.spawn(run_user, self)
         return self._greenlet
 
@@ -221,9 +212,7 @@ class HttpUser(User):
     def __init__(self, *args, **kwargs):
         super(HttpUser, self).__init__(*args, **kwargs)
         if self.host is None:
-            raise LocustError(
-                "You must specify the base host. Either in the host attribute in the User class, or on the command line using the --host option."
-            )
+            raise LocustError("You must specify the base host. Either in the host attribute in the User class, or on the command line using the --host option.")
 
         session = HttpSession(
             base_url=self.host,

@@ -1,3 +1,7 @@
+from gevent import monkey as _monkey
+from locust import stats, log
+
+_monkey.patch_all()
 import inspect
 import logging
 import os
@@ -11,19 +15,15 @@ import gevent
 
 import locust
 
-from . import log
-from .argument_parser import parse_locustfile_option, parse_options
-from .env import Environment
-from .log import setup_logging, greenlet_exception_logger
-from . import stats
-from .stats import print_error_report, print_percentile_stats, print_stats, stats_printer, stats_history
-from .stats import StatsCSV, StatsCSVFileWriter
-from .user import User
-from .user.inspectuser import get_task_ratio_dict, print_task_ratio
-from .util.timespan import parse_timespan
-from .exception import AuthCredentialsError
-from .shape import LoadTestShape
-
+from locust.argument_parser import parse_locustfile_option, parse_options
+from locust.env import Environment
+from locust.log import setup_logging, greenlet_exception_logger
+from locust.stats import print_error_report, print_percentile_stats, print_stats, stats_printer, stats_history, StatsCSV, StatsCSVFileWriter
+from locust.user import User
+from locust.user.inspectuser import get_task_ratio_dict, print_task_ratio
+from locust.util.timespan import parse_timespan
+from locust.exception import AuthCredentialsError
+from locust.shape import LoadTestShape
 
 version = locust.__version__
 
@@ -32,7 +32,11 @@ def is_user_class(item):
     """
     Check if a variable is a runnable (non-abstract) User class
     """
-    return bool(inspect.isclass(item) and issubclass(item, User) and item.abstract == False)
+    return bool(
+        inspect.isclass(item)
+        and issubclass(item, User)
+        and item.abstract == False
+    )
 
 
 def is_shape_class(item):
@@ -40,7 +44,9 @@ def is_shape_class(item):
     Check if a class is a LoadTestShape
     """
     return bool(
-        inspect.isclass(item) and issubclass(item, LoadTestShape) and item.__dict__["__module__"] != "locust.shape"
+        inspect.isclass(item)
+        and issubclass(item, LoadTestShape)
+        and item.__dict__['__module__'] != 'locust.shape'
     )
 
 
@@ -117,7 +123,7 @@ def create_environment(user_classes, options, events=None, shape_class=None):
         reset_stats=options.reset_stats,
         step_load=options.step_load,
         stop_timeout=options.stop_timeout,
-        parsed_options=options,
+        parsed_options=options
     )
 
 
@@ -176,23 +182,18 @@ def main():
 
     try:
         import resource
-
         if resource.getrlimit(resource.RLIMIT_NOFILE)[0] < 10000:
             # Increasing the limit to 10000 within a running process should work on at least MacOS.
             # It does not work on all OS:es, but we should be no worse off for trying.
             resource.setrlimit(resource.RLIMIT_NOFILE, [10000, resource.RLIM_INFINITY])
     except:
-        logger.warning(
-            "System open file limit setting is not high enough for load testing, and the OS didn't allow locust to increase it by itself. See https://github.com/locustio/locust/wiki/Installation#increasing-maximum-number-of-open-files-limit for more info."
-        )
+        logger.warning("System open file limit setting is not high enough for load testing, and the OS didn't allow locust to increase it by itself. See https://github.com/locustio/locust/wiki/Installation#increasing-maximum-number-of-open-files-limit for more info.")
 
     # create locust Environment
     environment = create_environment(user_classes, options, events=locust.events, shape_class=shape_class)
 
     if shape_class and (options.num_users or options.spawn_rate or options.step_load):
-        logger.error(
-            "The specified locustfile contains a shape class but a conflicting argument was specified: users, spawn-rate or step-load"
-        )
+        logger.error("The specified locustfile contains a shape class but a conflicting argument was specified: users, spawn-rate or step-load")
         sys.exit(1)
 
     if options.show_task_ratio:
@@ -205,10 +206,9 @@ def main():
         sys.exit(0)
     if options.show_task_ratio_json:
         from json import dumps
-
         task_data = {
             "per_class": get_task_ratio_dict(user_classes),
-            "total": get_task_ratio_dict(user_classes, total=True),
+            "total": get_task_ratio_dict(user_classes, total=True)
         }
         print(dumps(task_data))
         sys.exit(0)
@@ -266,9 +266,7 @@ def main():
             gevent.spawn_later(options.run_time, timelimit_stop).link_exception(greenlet_exception_handler)
 
     if options.csv_prefix:
-        stats_csv_writer = StatsCSVFileWriter(
-            environment, stats.PERCENTILES_TO_REPORT, options.csv_prefix, options.stats_history_enabled
-        )
+        stats_csv_writer = StatsCSVFileWriter(environment, stats.PERCENTILES_TO_REPORT, options.csv_prefix, options.stats_history_enabled)
     else:
         stats_csv_writer = StatsCSV(environment, stats.PERCENTILES_TO_REPORT)
 
@@ -279,16 +277,13 @@ def main():
         try:
             if options.web_host == "*":
                 # special check for "*" so that we're consistent with --master-bind-host
-                web_host = ""
+                web_host = ''
             else:
                 web_host = options.web_host
             if web_host:
                 logger.info("Starting web interface at %s://%s:%s" % (protocol, web_host, options.web_port))
             else:
-                logger.info(
-                    "Starting web interface at %s://0.0.0.0:%s (accepting connections from all network interfaces)"
-                    % (protocol, options.web_port)
-                )
+                logger.info("Starting web interface at %s://0.0.0.0:%s (accepting connections from all network interfaces)" % (protocol, options.web_port))
             web_ui = environment.create_web_ui(
                 host=web_host,
                 port=options.web_port,
@@ -314,11 +309,8 @@ def main():
         if options.master:
             # wait for worker nodes to connect
             while len(runner.clients.ready) < options.expect_workers:
-                logging.info(
-                    "Waiting for workers to be ready, %s of %s connected",
-                    len(runner.clients.ready),
-                    options.expect_workers,
-                )
+                logging.info("Waiting for workers to be ready, %s of %s connected",
+                             len(runner.clients.ready), options.expect_workers)
                 time.sleep(1)
         if not options.worker:
             # apply headless mode defaults
@@ -395,3 +387,7 @@ def main():
         shutdown()
     except KeyboardInterrupt as e:
         shutdown()
+
+
+if __name__ == '__main__':
+    main()

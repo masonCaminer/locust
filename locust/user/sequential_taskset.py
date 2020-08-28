@@ -1,5 +1,8 @@
+from gevent import monkey as _monkey
+
+_monkey.patch_all()
 from locust.exception import LocustError
-from .task import TaskSet, TaskSetMeta
+from locust.user.task import TaskSet, TaskSetMeta
 
 
 class SequentialTaskSetMeta(TaskSetMeta):
@@ -52,9 +55,7 @@ class SequentialTaskSet(TaskSet, metaclass=SequentialTaskSetMeta):
 
     def get_next_task(self):
         if not self.tasks:
-            raise LocustError(
-                "No tasks defined. use the @task decorator or set the tasks property of the SequentialTaskSet"
-            )
+            raise LocustError("No tasks defined. use the @task decorator or set the tasks property of the SequentialTaskSet")
         task = self.tasks[self._task_index % len(self.tasks)]
         self._task_index += 1
         return task

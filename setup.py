@@ -6,6 +6,11 @@ import sys
 
 from setuptools import find_packages, setup
 
+"""
+python setup.py bdist_wheel 
+python setup.py sdist 
+twine upload dist/*
+"""
 ROOT_PATH = os.path.abspath(os.path.dirname(__file__))
 
 # parse version from locust/__init__.py
@@ -15,7 +20,7 @@ with open(_init_file, "rb") as f:
     version = str(ast.literal_eval(_version_re.search(f.read().decode("utf-8")).group(1)))
 
 setup(
-    name="locust",
+    name="thickly",
     version=version,
     install_requires=[
         "gevent>=1.5.0",

@@ -34,7 +34,6 @@ class NotUserSubclass():
 
 '''
 
-
 class MockedLocustfile:
     __slots__ = ["filename", "directory", "file_path"]
 
@@ -44,14 +43,14 @@ def mock_locustfile(filename_prefix="mock_locustfile", content=MOCK_LOUCSTFILE_C
     mocked = MockedLocustfile()
     mocked.directory = os.path.dirname(os.path.abspath(__file__))
     mocked.filename = "%s_%s_%i.py" % (
-        filename_prefix,
-        str(time.time()).replace(".", "_"),
-        random.randint(0, 100000),
+        filename_prefix, 
+        str(time.time()).replace(".", "_"), 
+        random.randint(0,100000),
     )
     mocked.file_path = os.path.join(mocked.directory, mocked.filename)
-    with open(mocked.file_path, "w") as file:
+    with open(mocked.file_path, 'w') as file:
         file.write(content)
-
+    
     try:
         yield mocked
     finally:
