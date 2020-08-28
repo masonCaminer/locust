@@ -209,7 +209,7 @@
     <script>
 
         var rpsChart = new LocustLineChart($(".charts-container"), "Total Requests per Second", ["RPS", "Failures/s"], "reqs/s", ['#00ca5a', '#ff6d6d']);
-        var responseTimeChart = new LocustLineChart($(".charts-container"), "Response Times (ms)", ["Median Response Time", "95% percentile"], "ms");
+        var responseTimeChart = new LocustLineChart($(".charts-container"), "Response Times (ms)", ["Median Response Time", "95% percentile","90% percentile"], "ms");
         var usersChart = new LocustLineChart($(".charts-container"), "Number of Users", ["Users"], "users");
 
         rpsChart.chart.setOption({
@@ -236,6 +236,9 @@
                 },
                 {
                     data: [ {% for r in history %}{{ r.response_time_percentile_95 }}, {% endfor %} ]
+                },
+                {
+                    data: [ {% for r in history %}{{ r.response_time_percentile_90 }}, {% endfor %} ]
                 },
             ]
         });

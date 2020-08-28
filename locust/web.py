@@ -329,6 +329,7 @@ class WebUI:
                 report["fail_ratio"] = environment.runner.stats.total.fail_ratio
                 report["current_response_time_percentile_95"] = environment.runner.stats.total.get_current_response_time_percentile(0.95)
                 report["current_response_time_percentile_50"] = environment.runner.stats.total.get_current_response_time_percentile(0.5)
+                report["current_response_time_percentile_90"] = environment.runner.stats.total.get_current_response_time_percentile(0.9)
 
             is_distributed = isinstance(environment.runner, MasterRunner)
             if is_distributed:
